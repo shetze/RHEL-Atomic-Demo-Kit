@@ -1,0 +1,10 @@
+instance-id: 76c91232-2430-43a7-9736-72d3b89e870f;
+local-hostname: atomic02.example.com;
+network-interfaces: |
+ auto eth0
+ iface eth0 inet static
+ address 192.168.122.22
+ network 192.168.122.0
+ netmask 255.255.255.0
+ broadcast 192.168.122.255
+ gateway 192.168.122.1

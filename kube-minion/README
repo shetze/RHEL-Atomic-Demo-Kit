@@ -1,0 +1,10 @@
+This directory contains NoCloud datasource files (meta-data and user-data) to
+configure three Kubernetes minions.  Examine the content and adjust according
+to your environment.
+
+The create-Minions.sh script created the ISOs required for cloud-init and
+creates the VM instances.  It is required to have a  RHEL Atomic Host Cloud
+Image from
+https://access.redhat.com/downloads/content/271/ver=/rhel---7/7.1.0/x86_64/product-downloads
+(qcow2 format) in place.
+

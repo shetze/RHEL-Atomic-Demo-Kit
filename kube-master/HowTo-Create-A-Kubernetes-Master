@@ -1,0 +1,98 @@
+#############################################################################
+#  
+#  How To Build a RHEL Container / Kubernetes Demo Master
+#  
+#############################################################################
+
+#############################################################################
+# 1. Install VM with current RHEL-7 release
+#   - 32 GB disk space
+#   - 2 GB RAM
+#   - 1 CPU
+#   - minimal installation
+#
+# 2. Install Docker and Kubernetes
+#   - register system with subscription manager
+#   - install packages
+#   - enable services (we do not start services until configured)
+#   - open firewall port for docker-registry
+#
+#############################################################################
+
+subscription-manager register --auto-attach
+subscription-manager repos --enable=rhel-7-server-extras-rpms
+subscription-manager repos --enable=rhel-7-server-optional-rpms
+yum -y update
+yum -y install docker docker-registry kubernetes flannel
+
+firewall-cmd --zone=public --add-port=5000/tcp
+firewall-cmd --zone=public --add-port=5000/tcp --permanent
+firewall-cmd --zone=public --add-port=4001/tcp
+firewall-cmd --zone=public --add-port=4001/tcp --permanent
+firewall-cmd --zone=public --add-port=8080/tcp
+firewall-cmd --zone=public --add-port=8080/tcp --permanent
+# .... this list is far from complete at the moment. So we disable firewalld...
+systemctl stop firewalld
+systemctl disable firewalld
+
+for SERVICES in docker.service docker-registry etcd kube-apiserver kube-controller-manager kube-scheduler flannel; do
+  systemctl enable $SERVICES
+done
+
+#############################################################################
+# 3. Configure Docker
+#   - edit /etc/sysconfig/docker and add INSECURE_REGISTRY parameter, using your registry FQDN
+#     INSECURE_REGISTRY='--insecure-registry kubernetes.example.com:5000'
+#
+# 4. Configure Kubernetes Master
+#   - edit /etc/kubernetes/apiserver and set
+#     KUBE_API_ADDRESS="--address=0.0.0.0"
+#     KUBE_MASTER="--master=http://kubernetes.example.com:8080"
+#   - edit /etc/kubernetes/config and set
+#     KUBE_ETCD_SERVERS="--etcd_servers=http://kubernetes.example.com:4001"
+#   - edit /etc/kubernets/controller-manager and set
+#     KUBELET_ADDRESSES="--machines=atomic01.example.com,atomic02.example.com,atomic03.example.com"
+#
+# 5. Configure Flannel
+#   - edit /etc/sysconfig/flannel and set
+#     FLANNEL_ETCD="http://kubernetes.example.com:4001"
+#     FLANNEL_ETCD_KEY="/flannel/network"
+#     FLANNEL_OPTIONS="eth0"
+#   - start etcd
+#   - load flannel-config.json into etcd
+#
+#############################################################################
+
+systemctl start etcd
+curl -L http://kubernetes.example.com:4001/v2/keys/flannel/network/config -XPUT --data-urlencode value@flannel-config.json
+
+#############################################################################
+# 6. Load Docker Images
+#   - pull images from upstream repos
+#   - add tag pointers to local registry
+#   - push images to local registry 
+#
+#############################################################################
+
+systemctl start docker
+systemctl start docker-registry
+for IMAGES in rhel6 rhel7 dockerfile/redis kubernetes/redis-slave:v2 kubernetes/example-guestbook-php-redis:v2 stefwalter/cockpit-atomic:wip kubernetes/skydns:2015-03-11-001 kubernetes/kube2sky:1.1 coreos/etcd:v2.0.3 kubernetes/pause:go ; do
+  docker pull $IMAGES
+  docker tag $IMAGES kubernetes.example.com:5000/$IMAGES
+  docker push kubernetes.example.com:5000/$IMAGES
+done
+
+#############################################################################
+# 7. Reboot the system
+#   This is required to get the network setup for flannel work properly
+#############################################################################
+
+systemctl reboot
+
+#############################################################################
+# 8. Check if your Kubernetes master ist running properly
+#   - look if 'kubectl get minions' shows all our Atomic Hosts with status Ready
+#   - check if your flannel.1 interface is up and docker0 is using a range within that of flannel
+#
+# 9. Continue with kube-workload
+#############################################################################
