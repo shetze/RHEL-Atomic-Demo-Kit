@@ -43,5 +43,31 @@ And these are the 6 simple steps to get this up and running:
    browser and check if the messages you submitted appear in the body of that
    page.
 
+What else to look at...
+
+- you can examine the cluster:
+  - "kubectl get pods"
+  - "kubectl get services"
+  - "kubectl get rc"
+- you can change your workload by editing controller definitions and updating kubernetes
+  - edit frontend-controller.json and change the number of replicas, then run "kubectl update -f frontend-controller.json"
+    watch the number of example-guestbook-php-redis pods change
+- you can log into the minions as cloud-user with password redhat (or whatever
+  you changed that to in the user-data file)
+  - on the minions you can explore the network configuration
+    - each docker service uses a /24 subnet of the /16 flannel network
+    - the flannel device uses the same network as docker, thereby connecting
+      all /24 docker networks to one big /16 flannel overlay network
+    - check out "iptables -nvL -t nat"
+  - you can check messages from the services running inside a container
+    with "docker logs <container-id>"
+  - you can enter any container with "docker exec -i -t <container-id> sh"
+    - from inside a container, you can ping any container running on another
+      minion through the flannel overlay network
+  - you can look what etcd is providing to flanneld with
+    "curl -L http://192.168.122.10:4001/v2/keys/flannel/network/config"
 
 
+Further reading
+
+- https://github.com/GoogleCloudPlatform/kubernetes/tree/master/docs

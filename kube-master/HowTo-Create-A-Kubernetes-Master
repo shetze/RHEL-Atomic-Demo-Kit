@@ -11,6 +11,8 @@
 #   - 1 CPU
 #   - minimal installation
 #
+# On the fresh installed RHEL-7 system perform the steps 2 to 7 in order to configure it as Kubernetes master.
+#
 # 2. Install Docker and Kubernetes
 #   - register system with subscription manager
 #   - install packages
@@ -90,9 +92,13 @@ done
 systemctl reboot
 
 #############################################################################
-# 8. Check if your Kubernetes master ist running properly
-#   - look if 'kubectl get minions' shows all our Atomic Hosts with status Ready
-#   - check if your flannel.1 interface is up and docker0 is using a range within that of flannel
+#8. Go to ../kube-minions and follow the procedure to create a number of RHEL
+# Atomic Hosts as Kubernetes minions for our cluster. Start and restart minions.
 #
-# 9. Continue with kube-workload
+# 9. Check if your Kubernetes cluster ist running properly 
+# - look if 'kubectl get minions' shows all our Atomic Hosts with status Ready 
+# - check if your # flannel.1 interface is up and docker0 is using a range within
+#   that of flannel
+#
+# 10. Continue with kube-workload
 #############################################################################
