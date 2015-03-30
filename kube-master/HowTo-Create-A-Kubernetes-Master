@@ -22,6 +22,8 @@
 #############################################################################
 
 subscription-manager register --auto-attach
+subscription-manager repos --disable=*
+subscription-manager repos --enable=rhel-7-server-rpms
 subscription-manager repos --enable=rhel-7-server-extras-rpms
 subscription-manager repos --enable=rhel-7-server-optional-rpms
 yum -y update
@@ -37,7 +39,7 @@ firewall-cmd --zone=public --add-port=8080/tcp --permanent
 systemctl stop firewalld
 systemctl disable firewalld
 
-for SERVICES in docker.service docker-registry etcd kube-apiserver kube-controller-manager kube-scheduler flannel; do
+for SERVICES in docker.service docker-registry etcd kube-apiserver kube-controller-manager kube-scheduler flanneld; do
   systemctl enable $SERVICES
 done
 
@@ -56,7 +58,7 @@ done
 #     KUBELET_ADDRESSES="--machines=atomic01.example.com,atomic02.example.com,atomic03.example.com"
 #
 # 5. Configure Flannel
-#   - edit /etc/sysconfig/flannel and set
+#   - edit /etc/sysconfig/flanneld and set
 #     FLANNEL_ETCD="http://kubernetes.example.com:4001"
 #     FLANNEL_ETCD_KEY="/flannel/network"
 #     FLANNEL_OPTIONS="eth0"
