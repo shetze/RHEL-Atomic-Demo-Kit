@@ -1,0 +1,111 @@
+#cloud-config
+hostname: atomic01.lab.com
+password: redhat
+ssh_pwauth: True
+chpasswd: { expire: False }
+
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfxcho9SipUCokS29C+AJNNLcrfpT4xsu9aErax3XSNThWbiJehUDufe86ZO4lqib4dekDEL6d7vBa3WlalzJaq/p/sy1xjYdRNE0vHQCxuWgG+NaL8KcxXDhrUa0UHMW8k8hw9xzOGaRx35LRP9+B0fq/W572XPWwEPRJo8WtSKFiqJZEBkai1IcF0CErj30d0/va9c3EYqkCEWbxuIRL+qoysH+MgFbs1jjjrvfJCLiZZo95MWp4nDrmxYNlmwMIvYrsRZfygeyYPiqVzO51gmGxcVRTbqgG0fSRVRHjUE3E4VfW9wm1qn8+rEc0iQB6ER0f6U/wtEAUmvd/g4Ef ktenzer@ktenzer.muc.csb
+
+write_files:
+- content: |
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+    192.168.123.101 atomic03.lab.com atomic03
+    192.168.123.102 atomic02.lab.com atomic02
+    192.168.123.103 atomic01.lab.com atomic01
+    192.168.123.10 kubernetes.lab.com kubernetes
+  path: /etc/hosts
+  permissions: '0644'
+  owner: root:root
+- content: |
+    ###
+    # kubernetes system config
+    #
+    # The following values are used to configure various aspects of all
+    # kubernetes services, including
+    #
+    #   kube-apiserver.service
+    #   kube-controller-manager.service
+    #   kube-scheduler.service
+    #   kubelet.service
+    #   kube-proxy.service
+    
+    # Comma seperated list of nodes in the etcd cluster
+    KUBE_ETCD_SERVERS="--etcd_servers=http://kubernetes.lab.com:4001"
+    
+    # logging to stderr means we get it in the systemd journal
+    KUBE_LOGTOSTDERR="--logtostderr=true"
+    
+    # journal message level, 0 is debug
+    KUBE_LOG_LEVEL="--v=0"
+    
+    # Should this cluster be allowed to run privleged docker containers
+    KUBE_ALLOW_PRIV="--allow_privileged=false"
+  path: /etc/kubernetes/config
+  permissions: '0644'
+  owner: root:root
+- content: |
+    ###
+    # kubernetes kubelet (minion) config
+    
+    # The address for the info server to serve on (set to 0.0.0.0 or "" for all interfaces)
+    KUBELET_ADDRESS="--address=0.0.0.0"
+    
+    # The port for the info server to serve on
+    KUBELET_PORT="--port=10250"
+    
+    # You may leave this blank to use the actual hostname
+    KUBELET_HOSTNAME=""
+    
+    # Add your own!
+    KUBELET_ARGS=--cluster_domain=kubernetes.local --cluster_dns=10.254.0.10
+  path: /etc/kubernetes/kubelet
+  permissions: '0644'
+  owner: root:root
+- content: |
+    # /etc/sysconfig/docker
+    OPTIONS='--selinux-enabled'
+    DOCKER_CERT_PATH=/etc/docker
+    ADD_REGISTRY='--add-registry registry.access.redhat.com'
+    ADD_REGISTRY='--add-registry kubernetes.lab.com:5000'
+    # BLOCK_REGISTRY='--block-registry '
+    # INSECURE_REGISTRY='--insecure-registry'
+    # DOCKER_TMPDIR=/var/tmp
+    # LOGROTATE=false
+  path: /etc/sysconfig/docker
+  permissions: '0644'
+  owner: root:root
+- content: |
+    # Flanneld configuration options  
+    
+    # etcd url location.  Point this to the server where etcd runs
+    FLANNEL_ETCD="http://kubernetes.lab.com:4001"
+    
+    # etcd config key.  This is the configuration key that flannel queries
+    # For address range assignment
+    FLANNEL_ETCD_KEY="/flannel/network"
+    
+    # Any additional options that you want to pass
+    FLANNEL_OPTIONS="eth0"
+  path: /etc/sysconfig/flanneld
+  permissions: '0644'
+  owner: root:root
+- content: |
+    {}
+  path: /var/lib/kubelet/auth
+  permissions: '0644'
+  owner: root:root
+
+bootcmd:
+ - systemctl enable kube-proxy
+ - systemctl enable kubelet
+ - systemctl enable flanneld
+
+runcmd:
+ - hostname -f >/etc/hostname
+ - hostname -i >>/etc/issue
+ - echo '' >>/etc/issue
+
+final_message: "Cloud-init completed and the system is up, after $UPTIME seconds"
