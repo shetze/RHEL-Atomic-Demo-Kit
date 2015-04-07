@@ -28,5 +28,8 @@ On kubernetes master you can run 'kubectl get minions' and once they are ready y
 pods on RHEL Atomic on OpenStack.
 
 [root@kubernetes ~]# kubectl get minions
+
 NAME                LABELS              STATUS
+
 atomic01.lab.com    <none>              Ready
+
