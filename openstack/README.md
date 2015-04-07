@@ -19,7 +19,7 @@ which is supported by OpenStack. Below are some steps to configure RHEL Atomic (
  - nova boot --flavor m1.small --poll --image Atomic_7_1 --key-name atomic-key
  --security-groups prod-base,atomic --user_data user-data-openstack --nic net-id=e3f370ab-b6ac-4788-a739-7f8de8631518 Atomic1
 
-Note: The m1.small instance is required, ensure OpenStack flavor meets requirements for RHEL Atomic. In addition you will want to update the user-data-openstack for your environment.
+ Note: The m1.small instance is required, ensure OpenStack flavor meets requirements for RHEL Atomic. In addition you  will want to update the user-data-openstack for your environment.
 
 5. Associate floating IP
  - nova floating-ip-associate Atomic1 192.168.123.101
