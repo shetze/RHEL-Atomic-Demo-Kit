@@ -30,5 +30,6 @@ pods on RHEL Atomic on OpenStack.
 [root@kubernetes ~]# kubectl get minions
 
 NAME                LABELS              STATUS
+
 atomic01.lab.com    <none>              Ready
 
