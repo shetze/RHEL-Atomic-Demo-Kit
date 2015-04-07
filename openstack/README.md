@@ -27,9 +27,7 @@ services are enabled now but a full restart is needed to initialize the services
 On kubernetes master you can run 'kubectl get minions' and once they are ready you are done and can start deploying
 pods on RHEL Atomic on OpenStack.
 
-[root@kubernetes ~]# kubectl get minions
-
+- [root@kubernetes ~]# kubectl get minions
 NAME                LABELS              STATUS
-
 atomic01.lab.com    <none>              Ready
 
