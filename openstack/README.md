@@ -2,9 +2,9 @@
 RHEL Atomic is a perfect fit for OpenStack. As we have seen RHEL Atomic can be configured automatically using cloud-init
 which is supported by OpenStack. Below are some steps to configure RHEL Atomic (minions) in OpenStack.
 
-1. Download RHEL Atomic Cloud Image (QCOW2)
+- Download RHEL Atomic Cloud Image (QCOW2)
 - https://access.redhat.com/downloads/content/271/ver=/rhel---7/7.1.0/x86_64/product-downloads
-2. Add RHEL Atomic Cloud Image to Glance in OpenStack
+- Add RHEL Atomic Cloud Image to Glance in OpenStack
 - images->create image
 3. Create security group atomic and add required rules
 - neutron security-group-create atomic --description "RHEL Atomic security group"
