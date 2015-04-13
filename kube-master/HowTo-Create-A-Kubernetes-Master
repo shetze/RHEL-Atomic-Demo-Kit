@@ -80,7 +80,7 @@ curl -L http://kubernetes.example.com:4001/v2/keys/flannel/network/config -XPUT 
 
 systemctl start docker
 systemctl start docker-registry
-for IMAGES in rhel6 rhel7 dockerfile/redis kubernetes/redis-slave:v2 kubernetes/example-guestbook-php-redis:v2 stefwalter/cockpit-atomic:wip kubernetes/skydns:2015-03-11-001 kubernetes/kube2sky:1.1 coreos/etcd:v2.0.3 kubernetes/pause:go ; do
+for IMAGES in rhel6 rhel7 dockerfile/redis kubernetes/redis-slave:v2 kubernetes/example-guestbook-php-redis:v2 stefwalter/cockpit-atomic:wip kubernetes/skydns:2015-03-11-001 kubernetes/kube2sky:1.1 kubernetes/pause:go ; do
   docker pull $IMAGES
   docker tag $IMAGES kubernetes.example.com:5000/$IMAGES
   docker push kubernetes.example.com:5000/$IMAGES
