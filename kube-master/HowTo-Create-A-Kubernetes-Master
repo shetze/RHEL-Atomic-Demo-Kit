@@ -27,7 +27,7 @@ subscription-manager repos --enable=rhel-7-server-rpms
 subscription-manager repos --enable=rhel-7-server-extras-rpms
 subscription-manager repos --enable=rhel-7-server-optional-rpms
 yum -y update
-yum -y install docker docker-registry kubernetes flannel
+yum -y install docker docker-registry kubernetes etcd flannel
 
 firewall-cmd --zone=public --add-port=5000/tcp
 firewall-cmd --zone=public --add-port=5000/tcp --permanent
