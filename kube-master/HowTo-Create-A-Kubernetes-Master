@@ -5,13 +5,14 @@
 #############################################################################
 
 #############################################################################
-# 1. Install VM with current RHEL-7 release
-#   - 32 GB disk space
+# 1. Install VM with current RHEL-7.1 release
+#   - first virtual disk with 16 GB disk space for system (/dev/vda)
+#   - second virtual disk with 16 GB disk space for docker (dev/vdb)
 #   - 2 GB RAM
 #   - 1 CPU
 #   - minimal installation
 #
-# On the fresh installed RHEL-7 system perform the steps 2 to 7 in order to configure it as Kubernetes master.
+# On the fresh installed RHEL-7.1 system perform the steps 2 to 8 in order to configure it as Kubernetes master.
 #
 # 2. Install Docker and Kubernetes
 #   - register system with subscription manager
@@ -20,6 +21,8 @@
 #   - open firewall port for docker-registry
 #
 #############################################################################
+
+export DOMAIN=example.com
 
 subscription-manager register --auto-attach
 subscription-manager repos --disable=*
@@ -31,8 +34,8 @@ yum -y install docker docker-registry kubernetes etcd flannel
 
 firewall-cmd --zone=public --add-port=5000/tcp
 firewall-cmd --zone=public --add-port=5000/tcp --permanent
-firewall-cmd --zone=public --add-port=4001/tcp
-firewall-cmd --zone=public --add-port=4001/tcp --permanent
+firewall-cmd --zone=public --add-port=2379/tcp
+firewall-cmd --zone=public --add-port=2379/tcp --permanent
 firewall-cmd --zone=public --add-port=8080/tcp
 firewall-cmd --zone=public --add-port=8080/tcp --permanent
 # .... this list is far from complete at the moment. So we disable firewalld...
@@ -45,62 +48,76 @@ done
 
 #############################################################################
 # 3. Configure Docker
+#   - edit /etc/sysconfig/docker-storage-setup and add the second virtual disk for the docker storage
+#     DEVS="dev/vdb"
 #   - edit /etc/sysconfig/docker and add INSECURE_REGISTRY parameter, using your registry FQDN
-#     INSECURE_REGISTRY='--insecure-registry kubernetes.example.com:5000'
+#     INSECURE_REGISTRY='--insecure-registry kube-master.$DOMAIN:5000'
 #
-# 4. Configure Kubernetes Master
+# 4. Configure etcd
+#   - edit /etc/etcd/etcd.com and set
+#     ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+#
+# 5. Configure Kubernetes Master
 #   - edit /etc/kubernetes/apiserver and set
 #     KUBE_API_ADDRESS="--address=0.0.0.0"
-#     KUBE_MASTER="--master=http://kubernetes.example.com:8080"
+#     KUBE_ETCD_SERVERS="--etcd_servers=http://kube-master.$DOMAIN:2379"
 #   - edit /etc/kubernetes/config and set
-#     KUBE_ETCD_SERVERS="--etcd_servers=http://kubernetes.example.com:4001"
+#     KUBE_MASTER="--master=http://kube-master.$DOMAIN:8080"
 #   - edit /etc/kubernets/controller-manager and set
-#     KUBELET_ADDRESSES="--machines=atomic01.example.com,atomic02.example.com,atomic03.example.com"
+#     KUBELET_ADDRESSES="--machines=atomic01.$DOMAIN,atomic02.$DOMAIN,atomic03.$DOMAIN"
 #
-# 5. Configure Flannel
+# 6. Configure Flannel
 #   - edit /etc/sysconfig/flanneld and set
-#     FLANNEL_ETCD="http://kubernetes.example.com:4001"
+#     FLANNEL_ETCD="http://kube-master.$DOMAIN:2379"
 #     FLANNEL_ETCD_KEY="/flannel/network"
-#     FLANNEL_OPTIONS="eth0"
+#     FLANNEL_OPTIONS="-iface eth0"
 #   - start etcd
 #   - load flannel-config.json into etcd
 #
 #############################################################################
 
 systemctl start etcd
-curl -L http://kubernetes.example.com:4001/v2/keys/flannel/network/config -XPUT --data-urlencode value@flannel-config.json
+curl -L http://kube-master.$DOMAIN:2379/v2/keys/flannel/network/config -XPUT --data-urlencode value@flannel-config.json
 
 #############################################################################
-# 6. Load Docker Images
+# 7. Load Docker Images
 #   - pull images from upstream repos
 #   - add tag pointers to local registry
 #   - push images to local registry 
 #
 #############################################################################
 
+docker-storage-setup
 systemctl start docker
 systemctl start docker-registry
-for IMAGES in rhel6 rhel7 dockerfile/redis kubernetes/redis-slave:v2 kubernetes/example-guestbook-php-redis:v2 stefwalter/cockpit-atomic:wip kubernetes/skydns:2015-03-11-001 kubernetes/kube2sky:1.1 kubernetes/pause:go ; do
-  docker pull $IMAGES
-  docker tag $IMAGES kubernetes.example.com:5000/$IMAGES
-  docker push kubernetes.example.com:5000/$IMAGES
+for IMAGES in gcr.io/google_containers/etcd:2.0.9 gcr.io/google_containers/kube2sky:1.11 gcr.io/google_containers/skydns:2015-03-11-001 gcr.io/google_containers/exechealthz:1.0 ; do
+  docker pull $IMAGES;
+  #docker tag $IMAGES kube-master.$DOMAIN:5000/$IMAGES;
+  #docker push kube-master.$DOMAIN:5000/$IMAGES;
 done
 
+for IMAGES in rhel6 rhel7 dockerfile/redis kubernetes/redis-slave:v2 kubernetes/example-guestbook-php-redis:v2 stefwalter/cockpit-atomic:wip kubernetes/pause:go ; do
+  docker pull $IMAGES
+  docker tag $IMAGES kube-master.$DOMAIN:5000/$IMAGES
+  docker push kube-master.$DOMAIN:5000/$IMAGES
+done
+
+
 #############################################################################
-# 7. Reboot the system
+# 8. Reboot the system
 #   This is required to get the network setup for flannel work properly
 #############################################################################
 
 systemctl reboot
 
 #############################################################################
-#8. Go to ../kube-minions and follow the procedure to create a number of RHEL
+# 9. Go to ../kube-minions and follow the procedure to create a number of RHEL
 # Atomic Hosts as Kubernetes minions for our cluster. Start and restart minions.
 #
-# 9. Check if your Kubernetes cluster ist running properly 
+# 10. Check if your Kubernetes cluster ist running properly 
 # - look if 'kubectl get minions' shows all our Atomic Hosts with status Ready 
 # - check if your # flannel.1 interface is up and docker0 is using a range within
 #   that of flannel
 #
-# 10. Continue with kube-workload
+# 11. Continue with kube-workload
 #############################################################################

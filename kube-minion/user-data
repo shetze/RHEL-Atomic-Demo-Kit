@@ -14,7 +14,7 @@ write_files:
     192.168.122.23 atomic03.example.com atomic03
     192.168.122.22 atomic02.example.com atomic02
     192.168.122.21 atomic01.example.com atomic01
-    192.168.122.10 kubernetes.example.com kubernetes
+    192.168.122.10 kube-master.example.com kube-master
   path: /etc/hosts
   permissions: '0644'
   owner: root:root
@@ -32,7 +32,9 @@ write_files:
     #   kube-proxy.service
     
     # Comma seperated list of nodes in the etcd cluster
-    KUBE_ETCD_SERVERS="--etcd_servers=http://kubernetes.example.com:4001"
+    KUBE_ETCD_SERVERS="--etcd_servers=http://kube-master.example.com:2379"
+
+    KUBE_MASTER="--master=http://kube-master.example.com:8080"
     
     # logging to stderr means we get it in the systemd journal
     KUBE_LOGTOSTDERR="--logtostderr=true"
@@ -57,9 +59,11 @@ write_files:
     
     # You may leave this blank to use the actual hostname
     KUBELET_HOSTNAME=""
+
+    KUBELET_API_SERVER="--api_servers=http://kube-master.example.com:8080"
     
     # Add your own!
-    KUBELET_ARGS=--cluster_domain=kubernetes.local --cluster_dns=10.254.0.10
+    KUBELET_ARGS="--cluster_domain=kubernetes.local --cluster_dns=10.254.0.10 --auth_path=/var/lib/kubelet/auth"
   path: /etc/kubernetes/kubelet
   permissions: '0644'
   owner: root:root
@@ -68,7 +72,7 @@ write_files:
     OPTIONS='--selinux-enabled'
     DOCKER_CERT_PATH=/etc/docker
     ADD_REGISTRY='--add-registry registry.access.redhat.com'
-    ADD_REGISTRY='--add-registry kubernetes.example.com:5000'
+    ADD_REGISTRY='--add-registry kube-master.example.com:5000'
     # BLOCK_REGISTRY='--block-registry '
     # INSECURE_REGISTRY='--insecure-registry'
     # DOCKER_TMPDIR=/var/tmp
@@ -80,7 +84,7 @@ write_files:
     # Flanneld configuration options  
     
     # etcd url location.  Point this to the server where etcd runs
-    FLANNEL_ETCD="http://kubernetes.example.com:4001"
+    FLANNEL_ETCD="http://kube-master.example.com:2379"
     
     # etcd config key.  This is the configuration key that flannel queries
     # For address range assignment

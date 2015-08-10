@@ -17,6 +17,7 @@
 for instance in 1 2 3; do
   cp meta-data-at0$instance meta-data
   genisoimage -output /var/lib/libvirt/images/at0$instance-init.iso -volid cidata -joliet -rock user-data meta-data
+  qemu-img create -f qcow2 /VirtualMachines/RHEL-Atomic0$instance-1.qc2  4G
   qemu-img create -f qcow2 -b /VirtualMachines/rhel-atomic-cloud-7.1-0.x86_64.qcow2 /VirtualMachines/RHEL-Atomic0$instance.qc2
-  virt-install --import --name RHEL-Atomic0$instance --ram 1024 --vcpus 1 --disk path=/VirtualMachines/RHEL-Atomic0$instance.qc2 --disk path=/var/lib/libvirt/images/at0$insance-init.iso,device=cdrom --network bridge=br0 --force
+  virt-install --import --name RHEL-Atomic0$instance --ram 1024 --vcpus 1 --disk path=/VirtualMachines/RHEL-Atomic0$instance.qc2 --disk path=/VirtualMachines/RHEL-Atomic0$instance-1.qc2 --disk path=/var/lib/libvirt/images/at0$insance-init.iso,device=cdrom --network bridge=br0 --force
 done
